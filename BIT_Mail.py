@@ -1,6 +1,9 @@
 import datetime
 import imaplib
 from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.triggers.cron import CronTrigger
+import warnings
+warnings.filterwarnings("ignore")
 
 from Mail_Push_Core.Wechat_push import push_config
 from Mail_Push_Core.file_select_GUI import file_select_GUI
@@ -29,10 +32,12 @@ def main():
     # Cron定时器设置方法参阅：'https://crontab.guru'
     # 添加关键词监测任务
     if Keywords_raw != '':
-        scheduler.add_job(keywds_monitor, 'cron', hour=hour_keywd, minute=minute_keywd, max_instances=5,
+        trigger_Keywords = CronTrigger(hour=hour_keywd, minute=minute_keywd)
+        scheduler.add_job(keywds_monitor, trigger_Keywords, max_instances=5,
                           args=[Imap_url, Port, BIT_mail, User, Passwd, Date_range, Keywords_raw, Sendkeys])
     # 添加邮件汇总推送任务
-    scheduler.add_job(mail_summary, 'cron', hour=hour_summary, minute=minute_summary, second='30', max_instances=5,
+    trigger_mail_summary = CronTrigger(hour=hour_summary, minute=minute_summary, second='30')
+    scheduler.add_job(mail_summary, trigger_mail_summary, max_instances=5,
                       args=[Imap_url, Port, BIT_mail, User, Passwd, Date_range, Sendkeys])
     # 启动任务
     scheduler.start()

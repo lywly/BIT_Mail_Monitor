@@ -1,5 +1,9 @@
 import requests
 import configparser
+# 打包exe
+import os
+import sys
+os.environ['REQUESTS_CA_BUNDLE'] = os.path.join(os.path.dirname(sys.argv[0]), 'cacert.pem')
 
 
 def push_config(config_filename):

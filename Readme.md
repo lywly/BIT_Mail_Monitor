@@ -11,4 +11,8 @@
 2. `GUI`界面（有谁能`PR`一下吗？写不动了...）
 3. ...
 
+程序使用Pyinstaller打包
+
+`pyinstaller -F -i favicon.ico BIT_Mail.py`
+
 [^1]:http://www.pushplus.plus/
