@@ -1,0 +1,4 @@
+APScheduler==3.9.1
+jieba==0.42.1
+requests==2.27.1
+tzdata==2022.1
