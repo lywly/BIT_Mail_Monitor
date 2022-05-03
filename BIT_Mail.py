@@ -16,7 +16,7 @@ def main():
     Sendkeys = push_config(config_filename)
 
     Port = int(Port_raw)
-    BIT_mail = imaplib.IMAP4_SSL(host=Imap_url, port=Port)
+    BIT_mail = imaplib.IMAP4(host=Imap_url, port=Port)
     try:
         BIT_mail.login(User, Passwd)
         print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' 登录成功')

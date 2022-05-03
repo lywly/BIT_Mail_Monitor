@@ -24,8 +24,12 @@ def mail_summary(Imap_url, Port, BIT_mail, User, Passwd, Date_range, Sendkeys):
         print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' 邮件汇总任务运行正常')
         pass
 
-    BIT_mail.select(mailbox='INBOX', readonly=True)
-    print('Mailbox selected.')
+    try:
+        BIT_mail.select(mailbox='INBOX', readonly=True)
+        print('Mailbox selected.')
+    except Exception as e:
+        print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' 重登录失败')
+        print("ErrorType : {}, Error : {}".format(type(e).__name__, e))
 
     date = datetime.date.today().strftime("%d-%b-%Y") if int(Date_range) == 1 else (
             datetime.date.today() - datetime.timedelta(days=int(Date_range))).strftime("%d-%b-%Y")
