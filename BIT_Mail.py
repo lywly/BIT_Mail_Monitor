@@ -3,6 +3,9 @@ import imaplib
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 import warnings
+
+from Mail_Push_Core.keywds_cache import kc_delete
+
 warnings.filterwarnings("ignore")
 
 from Mail_Push_Core.Wechat_push import push_config
@@ -22,11 +25,11 @@ def main():
     BIT_mail = imaplib.IMAP4(host=Imap_url, port=Port)
     try:
         BIT_mail.login(User, Passwd)
-        print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' 登录成功')
+        print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' 登录成功，账户密码正确，定时任务已启动')
     except Exception as e:
         print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' 登录失败')
         print("ErrorType : {}, Error : {}".format(type(e).__name__, e))
-    # print(BIT_mail)
+    BIT_mail.logout()
 
     scheduler = BlockingScheduler(timezone="Asia/Shanghai")
     # Cron定时器设置方法参阅：'https://crontab.guru'
@@ -34,11 +37,13 @@ def main():
     if Keywords_raw != '':
         trigger_Keywords = CronTrigger(hour=hour_keywd, minute=minute_keywd)
         scheduler.add_job(keywds_monitor, trigger_Keywords, max_instances=5,
-                          args=[Imap_url, Port, BIT_mail, User, Passwd, Date_range, Keywords_raw, Sendkeys])
+                          args=[Imap_url, Port, User, Passwd, Date_range, Keywords_raw, Sendkeys])
+        trigger_kc_delete = CronTrigger(hour='02', minute='03')  # 缓存清理时间，每天凌晨2点
+        scheduler.add_job(kc_delete, trigger_kc_delete, max_instances=5)
     # 添加邮件汇总推送任务
     trigger_mail_summary = CronTrigger(hour=hour_summary, minute=minute_summary, second='30')
     scheduler.add_job(mail_summary, trigger_mail_summary, max_instances=5,
-                      args=[Imap_url, Port, BIT_mail, User, Passwd, Date_range, Sendkeys])
+                      args=[Imap_url, Port, User, Passwd, Date_range, Sendkeys])
     # 启动任务
     scheduler.start()
 

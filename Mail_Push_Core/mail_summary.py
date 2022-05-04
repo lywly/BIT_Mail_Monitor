@@ -8,7 +8,6 @@ from Mail_Push_Core.mail_login import mail_login
 """
 Imap_url：IMAP服务地址
 Port：IMAP服务端口
-BIT_mail：IMAP模块
 User: 邮箱地址
 Passwd：密码
 Date_range：监测时间范围，单位（天）
@@ -16,19 +15,16 @@ Sendkeys：推送设置
 """
 
 
-def mail_summary(Imap_url, Port, BIT_mail, User, Passwd, Date_range, Sendkeys):
+def mail_summary(Imap_url, Port, User, Passwd, Date_range, Sendkeys):
     print('---------------------------------------------------------')
-    if BIT_mail.state == 'NONAUTH':
-        BIT_mail = mail_login(Imap_url, Port, User, Passwd)
-    else:
-        print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' 邮件汇总任务运行正常')
-        pass
+    print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' 邮件汇总任务开始运行')
+    BIT_mail = mail_login(Imap_url, Port, User, Passwd)
 
     try:
         BIT_mail.select(mailbox='INBOX', readonly=True)
         print('Mailbox selected.')
     except Exception as e:
-        print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' 重登录失败')
+        print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' Select失败')
         print("ErrorType : {}, Error : {}".format(type(e).__name__, e))
 
     date = datetime.date.today().strftime("%d-%b-%Y") if int(Date_range) == 1 else (
@@ -52,14 +48,15 @@ def mail_summary(Imap_url, Port, BIT_mail, User, Passwd, Date_range, Sendkeys):
         for msg in msgs[::-1]:
             my_msg = email.message_from_bytes(msg[0][1])
 
-            Subject = str(make_header(decode_header(my_msg['subject'])))
-            From = str(make_header(decode_header(my_msg['from'])))
-            # To = str(make_header(decode_header(my_msg['to'])))
-            # Date = str(make_header(decode_header(my_msg['date'])))
+            Subject = str(make_header(decode_header(my_msg['Subject'])))
+            From = str(make_header(decode_header(my_msg['From'])))
+            # To = str(make_header(decode_header(my_msg['To'])))
+            # Date = time.strftime("%Y-%m-%d %H:%M:%S",
+            #                      time.localtime(email.utils.mktime_tz(email.utils.parsedate_tz(my_msg['Date']))))
 
             All_Data = All_Data + '-----------------------------------\n'
-            All_Data = All_Data + f"Subject: {Subject}" + "\n"
-            All_Data = All_Data + f"From: {From}" + "\n"
+            All_Data = All_Data + f"主题： {Subject}" + "\n"
+            All_Data = All_Data + f"发件人： {From}" + "\n"
             # All_Data = All_Data + f"Date: {Date}" + "\n"
             # All_Data = All_Data + f"Content: {Content}" + "\n"
 
@@ -67,4 +64,6 @@ def mail_summary(Imap_url, Port, BIT_mail, User, Passwd, Date_range, Sendkeys):
 
     BIT_mail.close()
     print('Mailbox closed.')
+    BIT_mail.logout()
+    print('退出登录')
     print('*********************************************************')

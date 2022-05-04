@@ -5,13 +5,13 @@ def monitor_config(config_filename):
     # 导入config.ini文件信息，若文件配置出错则需手动输入
     # 以下为一些默认值
     Keywords_raw = ''
-    hour_keywd = '9-23'
+    hour_keywd = '7-23'
     minute_keywd = '0,30'
-    hour_summary = '17'
-    minute_summary = '20'
+    hour_summary = '23'
+    minute_summary = '45'
     Date_range = '1'
     Imap_url = 'mail.bit.edu.cn'
-    Port_raw = '993'
+    Port_raw = '143'
 
     try:
         config_data = configparser.ConfigParser()
