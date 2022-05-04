@@ -48,47 +48,51 @@ def keywds_monitor(Imap_url, Port, User, Passwd, Date_range, Keywords_raw, Sendk
             msgs.append(mail_data)
 
         keywd_flag = 0
+        keywds_cache = kc_load()
+        All_Data = ''
+        All_Keywds = ''
         for msg in msgs:
-            keywds_cache = kc_load()
             my_msg = email.message_from_bytes(msg[0][1])
 
-            Subject = str(make_header(decode_header(my_msg['Subject'])))
-            From = str(make_header(decode_header(my_msg['From'])))
-            To = str(make_header(decode_header(my_msg['To'])))
-            Date = time.strftime("%Y-%m-%d %H:%M:%S",
-                                 time.localtime(email.utils.mktime_tz(email.utils.parsedate_tz(my_msg['Date']))))
-            # Date = str(make_header(decode_header(my_msg['date'])))
             Message_ID = my_msg['Message-ID']
-
-            Single_Email = f"主题： {Subject}" + "\n" + f"发件人： {From}" + "\n" + f"收件人： {To}" + "\n" + f"日期： {Date}" + "\n"
-
-            words = jieba.lcut(Single_Email.lower(), cut_all=True)
-            Keywords = jieba.lcut(Keywords_raw.lower(), cut_all=False)
-            # 去除英文逗号
-            while True:
-                try:
-                    Keywords.remove(',')
-                except:
-                    break
-
-            if Message_ID not in keywds_cache:
+            print(Message_ID)
+            if Message_ID in keywds_cache:
+                continue
+            else:
                 keywds_cache.append(Message_ID)
-                kc_save(keywds_cache)
+
+                Subject = str(make_header(decode_header(my_msg['Subject'])))
+                From = str(make_header(decode_header(my_msg['From'])))
+                To = str(make_header(decode_header(my_msg['To'])))
+                Date = time.strftime("%Y-%m-%d %H:%M:%S",
+                                     time.localtime(email.utils.mktime_tz(email.utils.parsedate_tz(my_msg['Date']))))
+                # Date = str(make_header(decode_header(my_msg['date'])))
+
+                Single_Email = f"主题： {Subject}" + "\n" + f"发件人： {From}" + "\n" + f"收件人： {To}" + "\n" + f"日期： {Date}" + "\n"
+
+                words = jieba.lcut(Single_Email.lower(), cut_all=True)
+                Keywords = jieba.lcut(Keywords_raw.lower(), cut_all=False)
+                # 去除英文逗号
+                while True:
+                    try:
+                        Keywords.remove(',')
+                    except:
+                        break
 
                 for keywd in Keywords:
                     if keywd.lower() in words:
                         keywd_flag = 1
                         Single_Data = r'邮件监测 - 关键词：' + keywd.lower() + r'%0D%0A推送时间：' + datetime.datetime.now().strftime(
-                            '%Y-%m-%d %H:%M:%S') + '\n-----------------------------------\n' + Single_Email
-                        print('已监测到关键词：' + keywd.lower())
-                        push(Single_Data, Sendkeys)
-
+                            '%Y-%m-%d %H:%M:%S') + '\n-----------------------------------\n' + Single_Email + '\n***********************************\n'
+                        All_Data = All_Data + Single_Data
+                        All_Keywds = All_Keywds + ' / ' + keywd.lower()
                         break
-            # else:
-            #     print('未收到关键词相关邮件或已推送，继续自动监测')
-                # print('已监测到关键词：' + keywd.lower())
 
-        if keywd_flag == 0:
+        kc_save(keywds_cache)
+        if keywd_flag == 1:
+            print('已监测到关键词：' + All_Keywds)
+            push(All_Data, Sendkeys)
+        else:
             print('未收到关键词相关邮件或已推送，继续自动监测')
 
     BIT_mail.close()

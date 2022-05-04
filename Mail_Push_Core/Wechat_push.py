@@ -22,23 +22,23 @@ def push(Pushing_Data, Sendkeys):
         # 将url改为自建地址
         my_Pushing_Data = Pushing_Data.replace("\n", "%0D%0A")
         url = Sendkeys[0] + my_Pushing_Data
-        try:
-            send_info = requests.get(url)
+        send_info = requests.get(url)
+        if "\"errmsg\":\"ok\"" in str(send_info.content, encoding = "utf-8"):
             print('自建通道已推送')
-        except:
+        else:
             print('自建通道推送超时')
     else:
         pass
         # print('未配置自建通道推送')
 
-    # PushPlus通道
+    # PushPlus通道"msg":"请求成功"
     if Sendkeys[1] != '':
         url = 'http://www.pushplus.plus/send?token=' + Sendkeys[
             1] + '&title=北理工邮箱推送&content=' + Pushing_Data + '&template=txt'
-        try:
-            send_info = requests.get(url)
+        send_info = requests.get(url)
+        if "\"msg\":\"请求成功\"" in str(send_info.content, encoding="utf-8"):
             print('PushPlus通道已推送')
-        except:
+        else:
             print('PushPlus通道推送超时')
     else:
         pass

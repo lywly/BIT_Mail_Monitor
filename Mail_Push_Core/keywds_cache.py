@@ -2,7 +2,7 @@ import os
 
 
 def kc_save(data):
-    with open('cache.txt', 'a') as f:
+    with open('cache.txt', 'w') as f:
         for value in data:
             f.write(str(value))
             f.write('\n')
