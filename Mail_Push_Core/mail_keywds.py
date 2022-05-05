@@ -39,9 +39,11 @@ def keywds_monitor(Imap_url, Port, User, Passwd, Date_range, Keywords_raw, Sendk
 
     if data[0] is None:
         print('今日未收到邮件') if int(Date_range) == 1 else print('%s日内未收到邮件' % Date_range)
+        print('<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>')
     else:
         print('今日已收到%d封邮件 - %s' % (len(data[0].split()), User)) if int(Date_range) == 1 else print(
             '%s日内已收到%d封邮件 - %s' % (Date_range, len(data[0].split()), User))
+        print('<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>')
         msgs = []
         for num in data[0].split():
             typ, mail_data = BIT_mail.fetch(num, '(RFC822)')
@@ -51,24 +53,28 @@ def keywds_monitor(Imap_url, Port, User, Passwd, Date_range, Keywords_raw, Sendk
         keywds_cache = kc_load()
         All_Data = ''
         All_Keywds = ''
+        Email_count = 1
         for msg in msgs:
             my_msg = email.message_from_bytes(msg[0][1])
 
             Message_ID = my_msg['Message-ID']
-            print(Message_ID)
+            Subject_raw = str(make_header(decode_header(my_msg['Subject'])))
+            Subject = Subject_raw.replace('\r\n', '').replace('\n', '')
+            print(str(Email_count) + ' -- ' + Subject)
+            Email_count += 1
+
             if Message_ID in keywds_cache:
                 continue
             else:
                 keywds_cache.append(Message_ID)
 
-                Subject = str(make_header(decode_header(my_msg['Subject'])))
                 From = str(make_header(decode_header(my_msg['From'])))
                 To = str(make_header(decode_header(my_msg['To'])))
                 Date = time.strftime("%Y-%m-%d %H:%M:%S",
                                      time.localtime(email.utils.mktime_tz(email.utils.parsedate_tz(my_msg['Date']))))
                 # Date = str(make_header(decode_header(my_msg['date'])))
 
-                Single_Email = f"主题： {Subject}" + "\n" + f"发件人： {From}" + "\n" + f"收件人： {To}" + "\n" + f"日期： {Date}" + "\n"
+                Single_Email = f"主题： {Subject}" + "\n" + f"发件人： {From}" + "\n" + f"收件人： {To}" + "\n" + f"日期： {Date}"
 
                 words = jieba.lcut(Single_Email.lower(), cut_all=True)
                 Keywords = jieba.lcut(Keywords_raw.lower(), cut_all=False)
@@ -89,6 +95,7 @@ def keywds_monitor(Imap_url, Port, User, Passwd, Date_range, Keywords_raw, Sendk
                         break
 
         kc_save(keywds_cache)
+        print('<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>')
         if keywd_flag == 1:
             print('已监测到关键词：' + All_Keywds)
             push(All_Data, Sendkeys)

@@ -14,6 +14,17 @@ from Mail_Push_Core.monitor_config import monitor_config
 from Mail_Push_Core.mail_keywds import keywds_monitor
 from Mail_Push_Core.mail_summary import mail_summary
 
+"""
+User: 邮箱地址
+Passwd：密码
+Keywords_raw：关键词，由config文件配置
+hour_keywd, minute_keywd, hour_summary, minute_summary：定时任务相关设置
+Date_range：监测时间范围，单位（天）
+Imap_url：IMAP服务地址
+Port_raw：IMAP服务端口-字符串格式
+Sendkeys：推送设置
+"""
+
 
 def main():
     config_filename = file_select_GUI()

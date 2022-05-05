@@ -33,9 +33,11 @@ def mail_summary(Imap_url, Port, User, Passwd, Date_range, Sendkeys):
 
     if data[0] is None:
         print('今日未收到邮件') if int(Date_range) == 1 else print('%s日内未收到邮件' % Date_range)
+        print('<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>')
     else:
         print('今日已收到%d封邮件 - %s' % (len(data[0].split()), User)) if int(Date_range) == 1 else print(
             '%s日内已收到%d封邮件 - %s' % (Date_range, len(data[0].split()), User))
+        print('<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>')
         msgs = []
         for num in data[0].split():
             typ, mail_data = BIT_mail.fetch(num, '(RFC822)')
@@ -48,7 +50,8 @@ def mail_summary(Imap_url, Port, User, Passwd, Date_range, Sendkeys):
         for msg in msgs[::-1]:
             my_msg = email.message_from_bytes(msg[0][1])
 
-            Subject = str(make_header(decode_header(my_msg['Subject'])))
+            Subject_raw = str(make_header(decode_header(my_msg['Subject'])))
+            Subject = Subject_raw.replace('\r\n', '')
             From = str(make_header(decode_header(my_msg['From'])))
             # To = str(make_header(decode_header(my_msg['To'])))
             # Date = time.strftime("%Y-%m-%d %H:%M:%S",
