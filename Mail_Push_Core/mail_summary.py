@@ -1,5 +1,6 @@
 import datetime
 import email
+import time
 from email.header import decode_header, make_header
 
 from Mail_Push_Core.Wechat_push import push
@@ -54,17 +55,17 @@ def mail_summary(Imap_url, Port, User, Passwd, Date_range, Sendkeys):
             Subject = Subject_raw.replace('\r\n', '')
             From = str(make_header(decode_header(my_msg['From'])))
             # To = str(make_header(decode_header(my_msg['To'])))
-            # Date = time.strftime("%Y-%m-%d %H:%M:%S",
-            #                      time.localtime(email.utils.mktime_tz(email.utils.parsedate_tz(my_msg['Date']))))
+            Date = time.strftime("%Y-%m-%d %H:%M:%S",
+                                 time.localtime(email.utils.mktime_tz(email.utils.parsedate_tz(my_msg['Date']))))
 
             All_Data = All_Data + '-----------------------------------\n'
             All_Data = All_Data + f"主题： {Subject}" + "\n"
             All_Data = All_Data + f"发件人： {From}" + "\n"
-            # All_Data = All_Data + f"Date: {Date}" + "\n"
-            # All_Data = All_Data + f"Content: {Content}" + "\n"
+            All_Data = All_Data + f"Date: {Date}" + "\n"
 
         push(All_Data, Sendkeys)
 
+    print('<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>')
     BIT_mail.close()
     print('Mailbox closed.')
     BIT_mail.logout()

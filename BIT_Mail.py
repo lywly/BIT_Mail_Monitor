@@ -36,9 +36,9 @@ def main():
     BIT_mail = imaplib.IMAP4(host=Imap_url, port=Port)
     try:
         BIT_mail.login(User, Passwd)
-        print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' 登录成功，账户密码正确，定时任务已启动')
+        print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' 验证成功，账户密码正确，定时任务已启动')
     except Exception as e:
-        print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' 登录失败')
+        print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' 验证失败，请重新检查登录信息')
         print("ErrorType : {}, Error : {}".format(type(e).__name__, e))
     BIT_mail.logout()
 
