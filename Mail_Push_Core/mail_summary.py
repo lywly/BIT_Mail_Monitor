@@ -3,8 +3,10 @@ import email
 import time
 from email.header import decode_header, make_header
 
-from Mail_Push_Core.Wechat_push import push
+from Mail_Push_Core.Pushing import push
+from Mail_Push_Core.mail_keywds import encoded_words_to_text
 from Mail_Push_Core.mail_login import mail_login
+from Mail_Push_Core.myprint import myprint
 
 """
 Imap_url：IMAP服务地址
@@ -17,42 +19,41 @@ Sendkeys：推送设置
 
 
 def mail_summary(Imap_url, Port, User, Passwd, Date_range, Sendkeys):
-    print('---------------------------------------------------------')
-    print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' 邮件汇总任务开始运行')
+    myprint('---------------------------------------------------------')
+    myprint(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' 邮件汇总任务开始运行')
     BIT_mail = mail_login(Imap_url, Port, User, Passwd)
 
     try:
         BIT_mail.select(mailbox='INBOX', readonly=True)
-        print('Mailbox selected.')
+        myprint('Mailbox selected.')
     except Exception as e:
-        print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' Select失败')
-        print("ErrorType : {}, Error : {}".format(type(e).__name__, e))
+        myprint(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' Select失败')
+        myprint("ErrorType : {}, Error : {}".format(type(e).__name__, e))
 
     date = datetime.date.today().strftime("%d-%b-%Y") if int(Date_range) == 1 else (
             datetime.date.today() - datetime.timedelta(days=int(Date_range))).strftime("%d-%b-%Y")
     _, data = BIT_mail.search(None, '(ALL)', f'(SENTSINCE {date})')
 
     if data[0] is None:
-        print('今日未收到邮件') if int(Date_range) == 1 else print('%s日内未收到邮件' % Date_range)
-        print('<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>')
+        myprint('今日未收到邮件') if int(Date_range) == 1 else myprint('%s日内未收到邮件' % Date_range)
+        myprint('<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>')
     else:
-        print('今日已收到%d封邮件 - %s' % (len(data[0].split()), User)) if int(Date_range) == 1 else print(
+        myprint('今日已收到%d封邮件 - %s' % (len(data[0].split()), User)) if int(Date_range) == 1 else myprint(
             '%s日内已收到%d封邮件 - %s' % (Date_range, len(data[0].split()), User))
-        print('<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>')
+        myprint('<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>')
         msgs = []
         for num in data[0].split():
             typ, mail_data = BIT_mail.fetch(num, '(RFC822)')
             msgs.append(mail_data)
 
-        # All_Data = r'今日共收到邮件' + str(len(data[0].split())) + '封-' + User + '\n'
         All_Data = r'今日共收到邮件' + str(len(data[0].split())) + '封\n' + User + '\n' if int(
             Date_range) == 1 else Date_range + r'日内共收到邮件' + str(
             len(data[0].split())) + '封\n' + User + '\n'
-        for msg in msgs[::-1]:
+        for msg in msgs:
             my_msg = email.message_from_bytes(msg[0][1])
 
-            Subject_raw = str(make_header(decode_header(my_msg['Subject'])))
-            Subject = Subject_raw.replace('\r\n', '')
+            Subject_raw = encoded_words_to_text(my_msg['Subject'])
+            Subject = Subject_raw.replace('\r\n', '').replace('\n', '')
             From = str(make_header(decode_header(my_msg['From'])))
             # To = str(make_header(decode_header(my_msg['To'])))
             Date = time.strftime("%Y-%m-%d %H:%M:%S",
@@ -65,9 +66,9 @@ def mail_summary(Imap_url, Port, User, Passwd, Date_range, Sendkeys):
 
         push(All_Data, Sendkeys)
 
-    print('<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>')
+    myprint('<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>')
     BIT_mail.close()
-    print('Mailbox closed.')
+    myprint('Mailbox closed.')
     BIT_mail.logout()
-    print('退出登录')
-    print('*********************************************************')
+    myprint('退出登录')
+    myprint('*********************************************************')

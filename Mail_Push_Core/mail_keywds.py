@@ -1,13 +1,16 @@
+import base64
 import datetime
 import email
+import quopri
+import re
 import time
 from email.header import decode_header, make_header
 import jieba
 
-from Mail_Push_Core.Wechat_push import push
+from Mail_Push_Core.Pushing import push
 from Mail_Push_Core.mail_login import mail_login
-
 from Mail_Push_Core.keywds_cache import kc_load, kc_save
+from Mail_Push_Core.myprint import myprint
 
 jieba.setLogLevel(20)
 """
@@ -21,29 +24,47 @@ Sendkeys：推送设置
 """
 
 
+def encoded_words_to_text(encoded_words):
+    encoded_word_regex = r'=\?{1}(.+)\?{1}([B|Q])\?{1}(.+)\?{1}='
+    try:
+        text = str(make_header(decode_header(encoded_words)))
+    except:
+        try:
+            charset, encoding, encoded_text = re.match(encoded_word_regex, encoded_words).groups()
+            if encoding == 'B':
+                byte_string = base64.b64decode(encoded_text)
+                text = byte_string.decode(charset)
+            elif encoding == 'Q':
+                byte_string = quopri.decodestring(encoded_text)
+                text = byte_string.decode(charset)
+        except:
+            text = '无主题'
+    return text
+
+
 def keywds_monitor(Imap_url, Port, User, Passwd, Date_range, Keywords_raw, Sendkeys):
-    print('---------------------------------------------------------')
-    print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' 关键词监测任务开始运行')
+    myprint('---------------------------------------------------------')
+    myprint(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' 关键词监测任务开始运行')
     BIT_mail = mail_login(Imap_url, Port, User, Passwd)
 
     try:
         BIT_mail.select(mailbox='INBOX', readonly=True)
-        print('Mailbox selected.')
+        myprint('Mailbox selected.')
     except Exception as e:
-        print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' Select失败')
-        print("ErrorType : {}, Error : {}".format(type(e).__name__, e))
+        myprint(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' Select失败')
+        myprint("ErrorType : {}, Error : {}".format(type(e).__name__, e))
 
     date = datetime.date.today().strftime("%d-%b-%Y") if int(Date_range) == 1 else (
             datetime.date.today() - datetime.timedelta(days=int(Date_range))).strftime("%d-%b-%Y")
     _, data = BIT_mail.search(None, '(ALL)', f'(SENTSINCE {date})')
 
     if data[0] is None:
-        print('今日未收到邮件') if int(Date_range) == 1 else print('%s日内未收到邮件' % Date_range)
-        print('<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>')
+        myprint('今日未收到邮件') if int(Date_range) == 1 else myprint('%s日内未收到邮件' % Date_range)
+        myprint('<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>')
     else:
-        print('今日已收到%d封邮件 - %s' % (len(data[0].split()), User)) if int(Date_range) == 1 else print(
+        myprint('今日已收到%d封邮件 - %s' % (len(data[0].split()), User)) if int(Date_range) == 1 else myprint(
             '%s日内已收到%d封邮件 - %s' % (Date_range, len(data[0].split()), User))
-        print('<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>')
+        myprint('<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>')
         msgs = []
         for num in data[0].split():
             typ, mail_data = BIT_mail.fetch(num, '(RFC822)')
@@ -58,9 +79,9 @@ def keywds_monitor(Imap_url, Port, User, Passwd, Date_range, Keywords_raw, Sendk
             my_msg = email.message_from_bytes(msg[0][1])
 
             Message_ID = my_msg['Message-ID']
-            Subject_raw = str(make_header(decode_header(my_msg['Subject'])))
+            Subject_raw = encoded_words_to_text(my_msg['Subject'])
             Subject = Subject_raw.replace('\r\n', '').replace('\n', '')
-            print(str(Email_count) + ' -- ' + Subject)
+            myprint(str(Email_count) + ' -- ' + Subject)
             Email_count += 1
 
             if Message_ID in keywds_cache:
@@ -69,12 +90,12 @@ def keywds_monitor(Imap_url, Port, User, Passwd, Date_range, Keywords_raw, Sendk
                 keywds_cache.append(Message_ID)
 
                 From = str(make_header(decode_header(my_msg['From'])))
-                To = str(make_header(decode_header(my_msg['To'])))
+                # To = str(make_header(decode_header(my_msg['To'])))
                 Date = time.strftime("%Y-%m-%d %H:%M:%S",
                                      time.localtime(email.utils.mktime_tz(email.utils.parsedate_tz(my_msg['Date']))))
                 # Date = str(make_header(decode_header(my_msg['date'])))
 
-                Single_Email = f"主题： {Subject}" + "\n" + f"发件人： {From}" + "\n" + f"收件人： {To}" + "\n" + f"日期： {Date}"
+                Single_Email = f"主题： {Subject}" + "\n" + f"发件人： {From}" + "\n" + f"日期： {Date}"
 
                 words = jieba.lcut(Single_Email.lower(), cut_all=True)
                 Keywords = jieba.lcut(Keywords_raw.lower(), cut_all=False)
@@ -88,22 +109,23 @@ def keywds_monitor(Imap_url, Port, User, Passwd, Date_range, Keywords_raw, Sendk
                 for keywd in Keywords:
                     if keywd.lower() in words:
                         keywd_flag = 1
-                        Single_Data = r'邮件监测 - 关键词：' + keywd.lower() + r'%0D%0A推送时间：' + datetime.datetime.now().strftime(
-                            '%Y-%m-%d %H:%M:%S') + '\n-----------------------------------\n' + Single_Email + '\n***********************************\n'
+                        Single_Data = Single_Email + '\n******************************\n'
                         All_Data = All_Data + Single_Data
-                        All_Keywds = All_Keywds + ' / ' + keywd.lower()
+                        All_Keywds = All_Keywds + '/' + keywd.lower()
                         break
 
         kc_save(keywds_cache)
-        print('<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>')
+        myprint('<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>')
         if keywd_flag == 1:
-            print('已监测到关键词：' + All_Keywds)
+            myprint('已监测到关键词：' + All_Keywds)
+            All_Data = f"监测邮箱： {User}" + '\n' + '关键词 - ' + All_Keywds + '\n' + '推送时间：' + datetime.datetime.now().strftime(
+                '%Y-%m-%d %H:%M:%S') + '\n------------------------------\n' + All_Data
             push(All_Data, Sendkeys)
         else:
-            print('未收到关键词相关邮件或已推送，继续自动监测')
+            myprint('未收到关键词相关邮件或已推送，继续自动监测')
 
     BIT_mail.close()
-    print('Mailbox closed.')
+    myprint('Mailbox closed.')
     BIT_mail.logout()
-    print('退出登录')
-    print('*********************************************************')
+    myprint('退出登录')
+    myprint('*********************************************************')

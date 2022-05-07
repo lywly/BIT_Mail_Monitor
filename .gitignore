@@ -1,4 +1,8 @@
-
 *.pyc
+*.html
+
+/.idea/*
+/.git/*
 /__pycache__/*
+/Mail_Push_Core/__pycache__/*
 /dist/*
