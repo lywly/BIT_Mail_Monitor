@@ -9,7 +9,7 @@
 
 ### How to use
 
-- 基于`Python=3.9`，相关依赖列于[requirements.txt](./requirements.txt)
+- 基于`Python=3.9`，`pip install -r requirements.txt`，相关依赖列于[requirements.txt](./requirements.txt)
 - 配置文件模板[`config_template.ini`](./config_template.ini)中对各项参数作了详细备注，请仔细阅读
 - 必填项为 `User` `Passwd`
 - 如需添加关键词自动监测，需填写 `Keywords`项，程序将在Terminal中显示运行结果
